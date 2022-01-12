@@ -12,41 +12,41 @@ class DBLP:
 
         # Element types in DBLP
         self.all_elements = {"article",
-                        "inproceedings",
-                        "proceedings",
-                        "book",
-                        "incollection",
-                        "phdthesis",
-                        "mastersthesis",
-                        "www",
-                        "person",
-                        "data"}
+                             "inproceedings",
+                             "proceedings",
+                             "book",
+                             "incollection",
+                             "phdthesis",
+                             "mastersthesis",
+                             "www",
+                             "person",
+                             "data"}
 
 
         # Feature types in DBLP
         self.all_features = {"address"  :"str",
-                        "author"   :"list",
-                        "booktitle":"str",
-                        "cdrom"    :"str",
-                        "chapter"  :"str",
-                        "cite"     :"list",
-                        "crossref" :"str",
-                        "editor"   :"list",
-                        "ee"       :"list",
-                        "isbn"     :"str",
-                        "journal"  :"str",
-                        "month"    :"str",
-                        "note"     :"str",
-                        "number"   :"str",
-                        "pages"    :"str",
-                        "publisher":"str",
-                        "publnr"   :"str",
-                        "school"   :"str",
-                        "series"   :"str",
-                        "title"    :"str",
-                        "url"      :"str",
-                        "volume"   :"str",
-                        "year"     :"str"}
+                             "author"   :"list",
+                             "booktitle":"str",
+                             "cdrom"    :"str",
+                             "chapter"  :"str",
+                             "cite"     :"list",
+                             "crossref" :"str",
+                             "editor"   :"list",
+                             "ee"       :"list",
+                             "isbn"     :"str",
+                             "journal"  :"str",
+                             "month"    :"str",
+                             "note"     :"str",
+                             "number"   :"str",
+                             "pages"    :"str",
+                             "publisher":"str",
+                             "publnr"   :"str",
+                             "school"   :"str",
+                             "series"   :"str",
+                             "title"    :"str",
+                             "url"      :"str",
+                             "volume"   :"str",
+                             "year"     :"str"}
 
 
     def __open_dblp_file(self, dblp_path:str)->etree._Element:
@@ -363,7 +363,10 @@ def main():
     dblp_path = "dblp.xml"
     save_path = "dblp.json"
     dblp = DBLP()
-    dblp.parse_all(dblp_path, save_path)
+    features = {"url", "author", "ee", "journal", "number", "pages", "publisher", "series","booktitle", "title", "volume", "year"}
+    features = {"title"}
+    features = {"year"}
+    dblp.parse_all(dblp_path, save_path, features_to_extract=features)
 
 if __name__ == '__main__':
     main()

@@ -24,6 +24,8 @@ wget https://dblp.org/xml/dblp.dtd
 gzip -d dblp.xml.gz
 ```
 
+In order to work, it is important to download both the DBLP dump (dblp.xml.gz and unzip it) and the DTD file (dblp.dtd).
+
 ## Type of documents extracted
 
 Here is the list of the 10 types of documents available within the DBLP dump:

@@ -2,6 +2,17 @@
 A simple python script for parsing DBLP dataset
 
 
+## Table of content
+- [DBLP Parser](#dblp-parser)
+  - [Table of content](#table-of-content)
+  - [Set up](#set-up)
+  - [Type of documents extracted](#type-of-documents-extracted)
+  - [Type of features extracted per document](#type-of-features-extracted-per-document)
+  - [Usage examples](#usage-examples)
+    - [Parse all papers](#parse-all-papers)
+  - [Coming soon](#coming-soon)
+- [Disclaimer](#disclaimer)
+
 ## Set up
 
 From your terminal run:

@@ -5,15 +5,19 @@ A simple python script for parsing DBLP dataset
 ## Table of content
 - [DBLP Parser](#dblp-parser)
   - [Table of content](#table-of-content)
-  - [Set up](#set-up)
+- [Set up](#set-up)
+- [Parser](#parser)
   - [Type of documents extracted](#type-of-documents-extracted)
   - [Type of features extracted per document](#type-of-features-extracted-per-document)
-  - [Usage examples](#usage-examples)
-    - [Parse all papers](#parse-all-papers)
-  - [Coming soon](#coming-soon)
+- [Usage examples](#usage-examples)
+  - [Parse all papers](#parse-all-papers)
+    - [Parameters](#parameters)
+    - [Generate JSONL file](#generate-jsonl-file)
+    - [Generate Dataframe (pandas)](#generate-dataframe-pandas)
+- [Coming soon](#coming-soon)
 - [Disclaimer](#disclaimer)
 
-## Set up
+# Set up
 
 From your terminal run:
 ```bash
@@ -25,6 +29,8 @@ gzip -d dblp.xml.gz
 ```
 
 In order to work, it is important to download both the DBLP dump (dblp.xml.gz and unzip it) and the DTD file (dblp.dtd).
+
+# Parser
 
 ## Type of documents extracted
 
@@ -73,23 +79,44 @@ Here are the 23 types of features that can be used to decribe a particular docum
 "year"
 ```
 
+In addition to this, the algorithm extract an additional feature: ```type```. This feature specififies the kind of document extracted (*article*, *inproceedings* and so on).
 
-## Usage examples
+Finally, if the parameter ```include_key_and_mdate=True```, it will add two additional features: key and mdate which are attribute of the document entity in the XML file. 
 
-### Parse all papers
+
+# Usage examples
+
+## Parse all papers
+
+With this function (```parse_all```) you can parse all documents available in DBLP.
+
+### Parameters
+
+| Parameter   | Default | Info |
+| ----------- | ----------- | ----------- |
+| dblp_path   | -      | File to load |
+| save_path   | -      | Where to save the file |
+| features_to_extract   | None      | Features to extract from the dump. If None (def.) extracts everything|
+| include_key_and_mdate   | False      | Extracts further keys in the element tag|
+| output   | "jsonl"      | Defines the kind of output (jsonl or dataframe)|
+
+dblp_path:str, save_path:str, features_to_extract:dict=None, include_key_and_mdate:bool=False, output:str="jsonl"
+### Generate JSONL file
 
 Within python you can run the following code:
 ```python
+from dblp_parser import DBLP
 dblp_path = "dblp.xml"
 save_path = "dblp.json"
 dblp = DBLP()
-dblp.parse_all(dblp_path, save_path, features_to_extract=features)
+dblp.parse_all(dblp_path, save_path)
 ```
 This will extract all documents from *dblp.xml* and describe them according to the 23 features available in the dataset. 
 The **output file** is a jsonl file in which each row is a dictionary. To be read, you must read line-by-line and load it as json dictionary.
 
 Extract specific set of features (e.g., just title, url, ee and few others) per document:
 ```python
+from dblp_parser import DBLP
 dblp_path = "dblp.xml"
 save_path = "dblp.json"
 dblp = DBLP()
@@ -98,9 +125,21 @@ dblp.parse_all(dblp_path, save_path, features_to_extract=features)
 ```
 This will create the final file with as many rows as the number of documents, described with just the required features.
 
-## Coming soon
+### Generate Dataframe (pandas)
+
+Export DBLP in a **dataframe**:
+```python
+from dblp_parser import DBLP
+dblp_path = "dblp.xml"
+dblp = DBLP()
+features = {"url", "author", "ee", "journal", "number", "pages", "publisher", "series","booktitle", "title", "volume", "year"}
+df = dblp.parse_all(dblp_path, features_to_extract=features, output="dataframe")
+print(df)
+```
+
+
+# Coming soon
 **_Soon will add new features and usecases_**
-* Will let export the output both as jsonl files and pandas dataframes
 * parse just conferences papers
 * parse just journal papers
 * ... if you have an idea please open an issue 

@@ -2,6 +2,7 @@ from datetime import datetime
 import re
 import os
 import sys
+import pandas as pd
 from lxml import etree
 
 
@@ -100,7 +101,7 @@ class DBLP:
 
         Returns
         -------
-        dict
+        attributes : dict
             Initialised set of article attibutes.
 
         """
@@ -127,11 +128,15 @@ class DBLP:
 
         Returns
         -------
-        set
+        refined_set_of_features : set
             Refined set of features to extract. User might have prompt wrong features.
 
         """
-        if len(features) == 0 or features is None:
+
+        if features is None:
+            return self.all_features
+
+        if len(features) == 0:
             return self.all_features
 
         refined_set_of_features = set()
@@ -219,6 +224,7 @@ class DBLP:
         Returns
         -------
         str
+            The page count
 
         """
         cnt = 0
@@ -255,7 +261,7 @@ class DBLP:
 
         Returns
         -------
-        dict
+        attributes : dict
 
 
         """
@@ -298,7 +304,7 @@ class DBLP:
         return attributes
 
 
-    def parse_all(self, dblp_path:str, save_path:str, features_to_extract:dict=None,include_key_and_mdate:bool=False)->None:
+    def parse_all(self, dblp_path:str, save_path:str=None, features_to_extract:dict=None, include_key_and_mdate:bool=False, output:str="jsonl")->None:
         """
         This function parses the DBLP XML file and builds a jsonl file in which
         each row is json dictionary containing the description of a single article
@@ -308,39 +314,79 @@ class DBLP:
         ----------
         dblp_path : str
             Source file of the DBLP file.
-        save_path : str
-            Destination file of the parsed DBLP file.
+        save_path : str, optional
+            Destination file of the parsed DBLP file. This is important when
+            extracting the JSONL. If extracting dataframe there is no need. It
+            will raise an exception if the save_path is not provided when
+            extracting the JSONL. The default is JSONL.
         features_to_extract : dict, optional
             User-defined features to extract. The default is None and then it
             will extract all features.
         include_key_and_mdate : bool, optional
             Defines whether to include key and mdate attribute from the
             document attribute list. The default is False.
+        output : str, optional
+            Defines the kind of output to return. Accepted values are "jsonl"
+            and "dataframe". Based on these parameters it will respectively
+            create a jsonl file or return a dataframe.
 
         Returns
         -------
-        None
+        dataframe : pandas.DataFrame
+            the dataframe containing all papers. This is returned only if
+            output is set to "dataframe"
 
 
         """
-        self.__log_msg("Parsing all. Started.")
+
+        if output not in ["jsonl", "dataframe"]:
+            raise ValueError("Outputs available are 'jsonl', or 'dataframe'.")
+
 
         features_to_extract = self.__check_features(features_to_extract)
 
-        file = open(save_path, 'w', encoding='utf8')
+
 
         root = self.__open_dblp_file(dblp_path)
 
-        for element in root:
-            if element.tag in self.all_elements:
-                attrib_values = self.__extract_features(element, features_to_extract, include_key_and_mdate)
-                file.write(str(attrib_values) + '\n')
+        if output == "jsonl":
 
-            self.__clear_element(element)
-        file.close()
-        self.__log_msg("Parsing all. Finished.")
+            if save_path is None:
+                raise ValueError("No save path provided.")
 
-    
+            self.__log_msg("Parsing all. Started.")
+
+            with open(save_path, 'w', encoding='utf8') as file:
+
+                for element in root:
+                    if element.tag in self.all_elements:
+                        attrib_values = self.__extract_features(element, features_to_extract, include_key_and_mdate)
+                        file.write(str(attrib_values) + '\n')
+
+                    self.__clear_element(element)
+
+            file.close()
+
+            self.__log_msg("Parsing all. Finished.")
+
+        elif output == "dataframe":
+
+            self.__log_msg("WARNING. This operation may take some time and will certainly use an abundance of RAM.")
+
+            self.__log_msg("Parsing all. Started.")
+
+            dataframe = pd.DataFrame(columns=list(features_to_extract))
+            for element in root:
+                if element.tag in self.all_elements:
+                    attrib_values = self.__extract_features(element, features_to_extract, include_key_and_mdate)
+                    dataframe = dataframe.append(attrib_values, ignore_index=True)
+
+
+            self.__log_msg("Parsing all. Finished.")
+            return dataframe
+
+
+
     def print_features(self)->None:
         """
         Prints the available features that can be extracted from the DBLP dump.
@@ -360,13 +406,10 @@ def main():
     Main function
 
     """
-    dblp_path = "dblp.xml"
+    dblp_path = "dblp2.xml"
     save_path = "dblp.json"
     dblp = DBLP()
-    features = {"url", "author", "ee", "journal", "number", "pages", "publisher", "series","booktitle", "title", "volume", "year"}
-    features = {"title"}
-    features = {"year"}
-    dblp.parse_all(dblp_path, save_path, features_to_extract=features)
+    dblp.parse_all(dblp_path, save_path)
 
 if __name__ == '__main__':
     main()

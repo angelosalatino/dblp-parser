@@ -3,6 +3,7 @@ import re
 import os
 import sys
 import pandas as pd
+import json
 from lxml import etree
 
 
@@ -361,7 +362,7 @@ class DBLP:
                 for element in root:
                     if element.tag in self.all_elements:
                         attrib_values = self.__extract_features(element, features_to_extract, include_key_and_mdate)
-                        file.write(str(attrib_values) + '\n')
+                        file.write(json.dumps(attrib_values) + '\n')
 
                     self.__clear_element(element)
 

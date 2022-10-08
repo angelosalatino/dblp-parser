@@ -23,12 +23,14 @@ From your terminal run:
 ```bash
 git clone https://github.com/angelosalatino/dblp-parser.git
 cd dblp-parser
+pip install -r requirements.txt
 wget https://dblp.org/xml/dblp.xml.gz
 wget https://dblp.org/xml/dblp.dtd
 gzip -d dblp.xml.gz
 ```
 
 In order to work, it is important to download both the DBLP dump (dblp.xml.gz and unzip it) and the DTD file (dblp.dtd).
+The basic requirements to run this code are ```pandas``` and ```lxml```.
 
 # Parser
 
@@ -107,7 +109,7 @@ Within python you can run the following code:
 ```python
 from dblp_parser import DBLP
 dblp_path = "dblp.xml"
-save_path = "dblp.json"
+save_path = "dblp.jsonl"
 dblp = DBLP()
 dblp.parse_all(dblp_path, save_path)
 ```
@@ -118,7 +120,7 @@ Extract specific set of features (e.g., just title, url, ee and few others) per 
 ```python
 from dblp_parser import DBLP
 dblp_path = "dblp.xml"
-save_path = "dblp.json"
+save_path = "dblp.jsonl"
 dblp = DBLP()
 features = {"url", "author", "ee", "journal", "number", "pages", "publisher", "series","booktitle", "title", "volume", "year"}
 dblp.parse_all(dblp_path, save_path, features_to_extract=features)

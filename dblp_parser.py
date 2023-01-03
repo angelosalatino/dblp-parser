@@ -407,7 +407,7 @@ def main():
     Main function
 
     """
-    dblp_path = "dblp2.xml"
+    dblp_path = "dblp.xml"
     save_path = "dblp.json"
     dblp = DBLP()
     dblp.parse_all(dblp_path, save_path)

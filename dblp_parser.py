@@ -476,7 +476,8 @@ class DBLP:
                 for element in root:
                     if element.tag in self.all_elements:
                         attrib_values = self.__extract_features(element, features_to_extract, include_key_and_mdate)
-                        file.write(json.dumps(attrib_values) + '\n')
+                        if attrib_values["year"] == year:
+                            file.write(json.dumps(attrib_values) + '\n')
 
                     self.__clear_element(element)
 
@@ -494,7 +495,8 @@ class DBLP:
             for element in root:
                 if element.tag in self.all_elements:
                     attrib_values = self.__extract_features(element, features_to_extract, include_key_and_mdate)
-                    dataframe = dataframe.append(attrib_values, ignore_index=True)
+                    if attrib_values["year"] == year:
+                        dataframe = dataframe.append(attrib_values, ignore_index=True)
 
 
             self.__log_msg("Parsing all. Finished.")

@@ -41,6 +41,11 @@ def generate_dataframe():
     features = {"url", "author", "ee", "journal", "number", "pages", "publisher", "series","booktitle", "title", "volume", "year"}
     df = dblp.parse_all(dblp_path, features_to_extract=features, output="dataframe")
     print(df)
+    
+    
+def download_the_latest_version_of_DBLP():
+    dblp = DBLP()
+    dblp.download_latest_dump()
 
 
 def main():
@@ -48,6 +53,9 @@ def main():
     Main function
 
     """
+    
+    download_the_latest_version_of_DBLP()
+    
     
     # parse_everything()
     # parse_a_selectio_of_features()

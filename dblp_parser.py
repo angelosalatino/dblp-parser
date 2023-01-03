@@ -14,14 +14,14 @@ import shutil
 class DBLP:
     """ The DBLP class that parses the XML DBLP dump """
     
-    def __init__(self, download:bool = True):
+    def __init__(self, download:bool = False):
         """
         
 
         Parameters
         ----------
         download : bool, optional
-            Wether to download the latest dump. The default is True.
+            Wether to download the latest dump. The default is False.
 
         Returns
         -------

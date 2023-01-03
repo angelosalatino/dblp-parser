@@ -5,12 +5,29 @@ import sys
 import pandas as pd
 import json
 from lxml import etree
+import requests
+from hurry.filesize import size
+import gzip
+import shutil
 
 
 class DBLP:
     """ The DBLP class that parses the XML DBLP dump """
-    def __init__(self):
+    
+    def __init__(self, download:bool = True):
+        """
+        
 
+        Parameters
+        ----------
+        download : bool, optional
+            Wether to download the latest dump. The default is True.
+
+        Returns
+        -------
+        None.
+
+        """
 
         # Element types in DBLP
         self.all_elements = {"article",
@@ -49,8 +66,88 @@ class DBLP:
                              "url"      :"str",
                              "volume"   :"str",
                              "year"     :"str"}
+        
+        if download:
+            self.__download_dtd()
+            self.__download_and_prepare_dataset()
+            
+            self.__log_msg("Dataset prepared. You can now parse it.")
 
+    
+    def __download_dtd(self)->None:
+        """Function that downloads the DTD from the DBLP website.
+        Args:
+            None
+        Returns:
+            None
+        """
+        filename = "dblp.dtd"
+        url = "https://dblp.uni-trier.de/xml/dblp.dtd"
+        self.__download_file(url, filename)
+        
+        self.__log_msg(f"DTD downloaded from {url}.")
+        
 
+    
+    def __download_and_prepare_dataset(self)->None:
+        """Function that downloads the whole dataset (latest dump) from the DBLP website.
+        Then it decompresses it
+        Args:
+            None
+        Returns:
+            None
+        """
+        filename_zip = "dblp.xml.gz"
+        url = "https://dblp.uni-trier.de/xml/dblp.xml.gz"
+        self.__download_file(url, filename_zip)
+        
+        self.__log_msg(f"Latest dump of DBLP downloaded from {url}.")
+        
+        filename_unzip = "dblp.xml"
+        
+
+        with gzip.open(filename_zip, 'rb') as f_in:
+            with open(filename_unzip, 'wb') as f_out:
+                shutil.copyfileobj(f_in, f_out)
+                
+        self.__log_msg("File unzipped and ready to be parsed.")
+                
+        
+    
+    
+    def __download_file(self, url:str, filename:str)->bool:
+        """Function that downloads files (general).
+        
+        Args:
+            url (string): Url of where the model is located.
+            filename (string): location of where to save the model
+        Returns:
+            boolean: whether it is successful or not.
+        """
+        is_downloaded = False
+        with open(filename, 'wb') as file:
+            response = requests.get(url, stream=True)
+            total = response.headers.get('content-length')
+    
+            if total is None:
+                #f.write(response.content)
+                self.__log_msg('There was an error while downloading the DTD.')
+            else:
+                downloaded = 0
+                total = int(total)
+                for data in response.iter_content(chunk_size=max(int(total/1000), 1024*1024)):
+                    downloaded += len(data)
+                    file.write(data)
+                    done = int(50*downloaded/total)
+                    sys.stdout.write('\r[{}{}] {}/{}'.format('█' * done, '.' * (50-done), size(downloaded), size(total)))
+                    sys.stdout.flush()
+                sys.stdout.write('\n')
+                # self.__log_msg('[*] Done!')
+                is_downloaded = True
+    
+        return is_downloaded
+    
+    
     def __open_dblp_file(self, dblp_path:str)->etree._Element:
         """
         Opens the DBLP file and returns the XML tree.
@@ -303,7 +400,105 @@ class DBLP:
                 except KeyError:
                     print("Key {} not found within the set of features to extract.".format(sub_element.tag))
         return attributes
+    
+    
+    def download_latest_dump(self)->None:
+        """
+        Downloads the latest dump of the DBLP dataset
 
+        Returns
+        -------
+        None
+
+        """
+        self.__download_dtd()
+        self.__download_and_prepare_dataset()
+        
+        self.__log_msg("Dataset prepared. You can now parse it.")
+        
+    
+    def parse_by_year(self, year:str, dblp_path:str, save_path:str=None, features_to_extract:dict=None, include_key_and_mdate:bool=False, output:str="jsonl")->None:
+        """
+        This function parses the DBLP XML file and finds all the relevant records in a given year.
+        It builds a jsonl file in which each row is json dictionary containing 
+        the description of a single article in DBLP.
+
+        Parameters
+        ----------
+        year : str
+            The year of which records are desired.
+        dblp_path : str
+            Source file of the DBLP file.
+        save_path : str, optional
+            Destination file of the parsed DBLP file. This is important when
+            extracting the JSONL. If extracting dataframe there is no need. It
+            will raise an exception if the save_path is not provided when
+            extracting the JSONL. The default is JSONL.
+        features_to_extract : dict, optional
+            User-defined features to extract. The default is None and then it
+            will extract all features.
+        include_key_and_mdate : bool, optional
+            Defines whether to include key and mdate attribute from the
+            document attribute list. The default is False.
+        output : str, optional
+            Defines the kind of output to return. Accepted values are "jsonl"
+            and "dataframe". Based on these parameters it will respectively
+            create a jsonl file or return a dataframe.
+
+        Returns
+        -------
+        dataframe : pandas.DataFrame
+            the dataframe containing all papers. This is returned only if
+            output is set to "dataframe"
+
+
+        """
+
+        if output not in ["jsonl", "dataframe"]:
+            raise ValueError("Outputs available are 'jsonl', or 'dataframe'.")
+
+
+        features_to_extract = self.__check_features(features_to_extract)
+
+
+
+        root = self.__open_dblp_file(dblp_path)
+
+        if output == "jsonl":
+
+            if save_path is None:
+                raise ValueError("No save path provided.")
+
+            self.__log_msg("Parsing all. Started.")
+
+            with open(save_path, 'w', encoding='utf8') as file:
+
+                for element in root:
+                    if element.tag in self.all_elements:
+                        attrib_values = self.__extract_features(element, features_to_extract, include_key_and_mdate)
+                        file.write(json.dumps(attrib_values) + '\n')
+
+                    self.__clear_element(element)
+
+            file.close()
+
+            self.__log_msg("Parsing all. Finished.")
+
+        elif output == "dataframe":
+
+            self.__log_msg("WARNING. This operation may take some time and will certainly use an abundance of RAM.")
+
+            self.__log_msg("Parsing all. Started.")
+
+            dataframe = pd.DataFrame(columns=list(features_to_extract))
+            for element in root:
+                if element.tag in self.all_elements:
+                    attrib_values = self.__extract_features(element, features_to_extract, include_key_and_mdate)
+                    dataframe = dataframe.append(attrib_values, ignore_index=True)
+
+
+            self.__log_msg("Parsing all. Finished.")
+            return dataframe
 
     def parse_all(self, dblp_path:str, save_path:str=None, features_to_extract:dict=None, include_key_and_mdate:bool=False, output:str="jsonl")->None:
         """
@@ -402,15 +597,3 @@ class DBLP:
               For more info, check on https://dblp.uni-trier.de/faq/index.html"""
               .format(", ".join([k for k,v in self.all_features.items()])))
 
-def main():
-    """
-    Main function
-
-    """
-    dblp_path = "dblp.xml"
-    save_path = "dblp.json"
-    dblp = DBLP()
-    dblp.parse_all(dblp_path, save_path)
-
-if __name__ == '__main__':
-    main()

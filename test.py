@@ -14,7 +14,7 @@ def parse_year_2022():
     dblp = DBLP()
     
     dblp_path = "dblp.xml"
-    save_path = "dblp.json"
+    save_path = "dblp_2022.json"
     dblp.parse_by_year("2022", dblp_path, save_path)
     
     

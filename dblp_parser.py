@@ -502,6 +502,93 @@ class DBLP:
             self.__log_msg("Parsing all. Finished.")
             return dataframe
 
+
+    def parse_by_years(self, years:list, dblp_path:str, save_path:str=None, features_to_extract:dict=None, include_key_and_mdate:bool=False, output:str="jsonl")->None:
+        """
+        This function parses the DBLP XML file and finds all the relevant records in a given set of years.
+        It builds a jsonl file in which each row is json dictionary containing 
+        the description of a single article in DBLP.
+    
+        Parameters
+        ----------
+        years : list
+            The years of which records are desired.
+        dblp_path : str
+            Source file of the DBLP file.
+        save_path : str, optional
+            Destination file of the parsed DBLP file. This is important when
+            extracting the JSONL. If extracting dataframe there is no need. It
+            will raise an exception if the save_path is not provided when
+            extracting the JSONL. The default is JSONL.
+        features_to_extract : dict, optional
+            User-defined features to extract. The default is None and then it
+            will extract all features.
+        include_key_and_mdate : bool, optional
+            Defines whether to include key and mdate attribute from the
+            document attribute list. The default is False.
+        output : str, optional
+            Defines the kind of output to return. Accepted values are "jsonl"
+            and "dataframe". Based on these parameters it will respectively
+            create a jsonl file or return a dataframe.
+    
+        Returns
+        -------
+        dataframe : pandas.DataFrame
+            the dataframe containing all papers. This is returned only if
+            output is set to "dataframe"
+    
+    
+        """
+    
+        if output not in ["jsonl", "dataframe"]:
+            raise ValueError("Outputs available are 'jsonl', or 'dataframe'.")
+    
+    
+        features_to_extract = self.__check_features(features_to_extract)
+    
+        years = set(years)
+    
+        root = self.__open_dblp_file(dblp_path)
+    
+        if output == "jsonl":
+    
+            if save_path is None:
+                raise ValueError("No save path provided.")
+    
+            self.__log_msg("Parsing all. Started.")
+    
+            with open(save_path, 'w', encoding='utf8') as file:
+    
+                for element in root:
+                    if element.tag in self.all_elements:
+                        attrib_values = self.__extract_features(element, features_to_extract, include_key_and_mdate)
+                        if attrib_values["year"] in years:
+                            file.write(json.dumps(attrib_values) + '\n')
+    
+                    self.__clear_element(element)
+    
+            file.close()
+    
+            self.__log_msg("Parsing all. Finished.")
+    
+        elif output == "dataframe":
+    
+            self.__log_msg("WARNING. This operation may take some time and will certainly use an abundance of RAM.")
+    
+            self.__log_msg("Parsing all. Started.")
+    
+            dataframe = pd.DataFrame(columns=list(features_to_extract))
+            for element in root:
+                if element.tag in self.all_elements:
+                    attrib_values = self.__extract_features(element, features_to_extract, include_key_and_mdate)
+                    if attrib_values["year"] in years:
+                        dataframe = dataframe.append(attrib_values, ignore_index=True)
+    
+    
+            self.__log_msg("Parsing all. Finished.")
+            return dataframe
+        
+
     def parse_all(self, dblp_path:str, save_path:str=None, features_to_extract:dict=None, include_key_and_mdate:bool=False, output:str="jsonl")->None:
         """
         This function parses the DBLP XML file and builds a jsonl file in which
